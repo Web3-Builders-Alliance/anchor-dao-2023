@@ -1,6 +1,9 @@
-use anchor_lang::{prelude::*, system_program::Transfer};
+use anchor_lang::prelude::*;
 
-use crate::{state::{config::DaoConfig, Proposal, StakeState, VoteState}, errors::DaoError};
+use crate::{
+    errors::DaoError,
+    state::{config::DaoConfig, Proposal, StakeState, VoteState},
+};
 
 #[derive(Accounts)]
 pub struct Vote<'info> {
@@ -31,15 +34,11 @@ pub struct Vote<'info> {
         bump = config.config_bump
     )]
     config: Account<'info, DaoConfig>,
-    system_program: Program<'info, System>
+    system_program: Program<'info, System>,
 }
 
 impl<'info> Vote<'info> {
-    pub fn vote(
-        &mut self,
-        amount: u64,
-        bump: u8
-    ) -> Result<()> {
+    pub fn vote(&mut self, amount: u64, bump: u8) -> Result<()> {
         // Check proposal is open
         self.proposal.is_open()?;
         // Check proposal hasn't expired
@@ -53,10 +52,6 @@ impl<'info> Vote<'info> {
         // Add a vote account to the stake state
         self.stake_state.add_account()?;
         // Initialize vote
-        self.vote.init(
-            self.owner.key(),
-            amount,
-            bump
-        )
+        self.vote.init(self.owner.key(), amount, bump)
     }
 }

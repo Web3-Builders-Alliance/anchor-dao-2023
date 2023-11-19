@@ -1,6 +1,9 @@
-use anchor_lang::{prelude::*, system_program::{Transfer, transfer}};
+use anchor_lang::{
+    prelude::*,
+    system_program::{transfer, Transfer},
+};
 
-use crate::{state::{config::DaoConfig, Proposal, StakeState, ProposalType}, errors::DaoError};
+use crate::state::{config::DaoConfig, Proposal, ProposalType, StakeState};
 
 #[derive(Accounts)]
 #[instruction(id: u64)]
@@ -31,11 +34,10 @@ pub struct CreateProposal<'info> {
         bump = config.config_bump
     )]
     config: Account<'info, DaoConfig>,
-    system_program: Program<'info, System>
+    system_program: Program<'info, System>,
 }
 
 impl<'info> CreateProposal<'info> {
-
     pub fn create_proposal(
         &mut self,
         id: u64,
@@ -44,7 +46,7 @@ impl<'info> CreateProposal<'info> {
         proposal: ProposalType,
         quorum: u64,
         expiry: u64,
-        bump: u8
+        bump: u8,
     ) -> Result<()> {
         // Make sure user has staked
         self.stake_state.check_stake()?;
@@ -56,28 +58,19 @@ impl<'info> CreateProposal<'info> {
         self.config.check_max_expiry(expiry)?;
         // Initialize the proposal
         self.proposal.init(
-            id,
-            name, // A proposal name
+            id, name, // A proposal name
             gist, // 72 bytes (39 bytes + / + 32 byte ID)
-            proposal,
-            quorum,
-            expiry,
-            bump
+            proposal, quorum, expiry, bump,
         )
     }
 
-    pub fn pay_proposal_fee(
-        &mut self
-    ) -> Result<()> {
+    pub fn pay_proposal_fee(&mut self) -> Result<()> {
         let accounts = Transfer {
             from: self.owner.to_account_info(),
-            to: self.treasury.to_account_info()
+            to: self.treasury.to_account_info(),
         };
 
-        let ctx = CpiContext::new(
-            self.system_program.to_account_info(),
-            accounts
-        );
+        let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
 
         transfer(ctx, self.config.proposal_fee)
     }

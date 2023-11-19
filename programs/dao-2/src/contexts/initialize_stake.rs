@@ -1,9 +1,10 @@
-use std::collections::BTreeMap;
-
 use anchor_lang::prelude::*;
-use anchor_spl::{token::{Token, TokenAccount, Mint}, associated_token::AssociatedToken};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
-use crate::{state::{config::DaoConfig, StakeState}, errors::DaoError};
+use crate::state::{config::DaoConfig, StakeState};
 
 #[derive(Accounts)]
 pub struct InitializeStake<'info> {
@@ -49,19 +50,16 @@ pub struct InitializeStake<'info> {
     config: Account<'info, DaoConfig>,
     token_program: Program<'info, Token>,
     associated_token_program: Program<'info, AssociatedToken>,
-    system_program: Program<'info, System>
+    system_program: Program<'info, System>,
 }
 
 impl<'info> InitializeStake<'info> {
-    pub fn init(
-        &self,
-        bumps: &BTreeMap<String, u8>
-    ) -> Result<()> {
+    pub fn init(&mut self, bumps: &InitializeStakeBumps) -> Result<()> {
         self.stake_state.init(
             self.owner.key(),
-            *bumps.get("stake_state").ok_or(DaoError::BumpError)?,
-            *bumps.get("stake_ata").ok_or(DaoError::BumpError)?,
-            *bumps.get("stake_auth").ok_or(DaoError::BumpError)?
+            bumps.stake_state,
+            bumps.stake_ata,
+            bumps.stake_auth,
         )
     }
 }

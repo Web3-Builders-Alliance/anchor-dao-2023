@@ -1,12 +1,16 @@
-use anchor_lang::{prelude::*, system_program::{Transfer, transfer}};
+use anchor_lang::{
+    prelude::*,
+    system_program::{transfer, Transfer},
+};
 
-use crate::{state::{config::DaoConfig, Proposal, ProposalType}, errors::DaoError};
+use crate::state::{config::DaoConfig, Proposal, ProposalType};
 
 #[derive(Accounts)]
 pub struct CleanupProposal<'info> {
     #[account(mut)]
     initializer: Signer<'info>,
     #[account(mut)]
+    /// CHECK: This is safe.
     payee: UncheckedAccount<'info>,
     #[account(
         mut,
@@ -25,22 +29,18 @@ pub struct CleanupProposal<'info> {
         bump = config.config_bump
     )]
     config: Account<'info, DaoConfig>,
-    system_program: Program<'info, System>
+    system_program: Program<'info, System>,
 }
 
 impl<'info> CleanupProposal<'info> {
-    pub fn cleanup_proposal(
-        &mut self
-    ) -> Result<()> {
+    pub fn cleanup_proposal(&mut self) -> Result<()> {
         // Try finalize
         self.proposal.try_finalize();
         self.proposal.is_failed()?;
         Ok(())
     }
 
-    pub fn execute_proposal(
-        &mut self
-    ) -> Result<()> {
+    pub fn execute_proposal(&mut self) -> Result<()> {
         // Try finalize proposal
         self.proposal.try_finalize();
         // Check if the status is successful
@@ -53,21 +53,21 @@ impl<'info> CleanupProposal<'info> {
     }
 
     pub fn finalize_vote(&self) -> Result<()> {
-        msg!("Vote result: {} / {}", self.proposal.votes, self.proposal.quorum);
+        msg!(
+            "Vote result: {} / {}",
+            self.proposal.votes,
+            self.proposal.quorum
+        );
         msg!("Vote has {:?}", self.proposal.result);
         Ok(())
     }
 
-    pub fn payout_bounty(
-        &self,
-        payee: Pubkey,
-        payout: u64
-    ) -> Result<()> {
+    pub fn payout_bounty(&self, payee: Pubkey, payout: u64) -> Result<()> {
         require_keys_eq!(self.payee.key(), payee);
 
         let accounts = Transfer {
             from: self.treasury.to_account_info(),
-            to: self.payee.to_account_info()
+            to: self.payee.to_account_info(),
         };
 
         let seeds = &[
@@ -81,21 +81,19 @@ impl<'info> CleanupProposal<'info> {
         let ctx = CpiContext::new_with_signer(
             self.system_program.to_account_info(),
             accounts,
-            signer_seeds
+            signer_seeds,
         );
 
         transfer(ctx, payout)
     }
 
-    pub fn execute_tx(
-        &self
-    ) -> Result<()> {
+    pub fn execute_tx(&self) -> Result<()> {
         // Instruction
 
         // Accounts
 
         // Signers
-        
+
         Ok(())
     }
 }

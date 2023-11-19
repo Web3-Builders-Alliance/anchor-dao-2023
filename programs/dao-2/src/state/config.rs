@@ -14,7 +14,7 @@ pub struct DaoConfig {
     pub auth_bump: u8,
     pub config_bump: u8,
     pub mint_bump: u8,
-    pub treasury_bump: u8
+    pub treasury_bump: u8,
 }
 
 impl DaoConfig {
@@ -32,7 +32,7 @@ impl DaoConfig {
         auth_bump: u8,
         config_bump: u8,
         mint_bump: u8,
-        treasury_bump: u8        
+        treasury_bump: u8,
     ) -> Result<()> {
         self.seed = seed;
         self.issue_price = issue_price;
@@ -50,7 +50,10 @@ impl DaoConfig {
     }
 
     pub fn add_proposal(&mut self, id: u64) -> Result<()> {
-        self.proposal_count = self.proposal_count.checked_add(1).ok_or(DaoError::Overflow)?;
+        self.proposal_count = self
+            .proposal_count
+            .checked_add(1)
+            .ok_or(DaoError::Overflow)?;
         require!(self.proposal_count == id, DaoError::InvalidProposalSeed);
         Ok(())
     }

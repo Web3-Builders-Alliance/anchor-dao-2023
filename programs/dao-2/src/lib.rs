@@ -1,16 +1,16 @@
 use anchor_lang::prelude::*;
 
 mod contexts;
-use contexts::*;
+use contexts::{CleanupStake, *};
 mod constants;
-mod state;
 mod errors;
+mod state;
+use state::ProposalType;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod dao_2 {
-    use crate::{errors::DaoError, state::ProposalType};
 
     use super::*;
 
@@ -23,9 +23,18 @@ pub mod dao_2 {
         proposal_fee: u64,
         max_supply: u64,
         min_quorum: u64,
-        max_expiry: u64
+        max_expiry: u64,
     ) -> Result<()> {
-        ctx.accounts.init(seed, &ctx.bumps, issue_price, issue_amount, proposal_fee, max_supply, min_quorum, max_expiry)
+        ctx.accounts.init(
+            seed,
+            &ctx.bumps,
+            issue_price,
+            issue_amount,
+            proposal_fee,
+            max_supply,
+            min_quorum,
+            max_expiry,
+        )
     }
 
     // Handle token issuance
@@ -41,9 +50,9 @@ pub mod dao_2 {
     }
 
     // Close a stake account when you're done with it
-    pub fn close_stake(ctx: Context<CloseStake>) -> Result<()> {
+    pub fn close_stake(ctx: Context<CleanupStake>) -> Result<()> {
         // Create a stake account
-        ctx.accounts.close(&ctx.bumps)
+        ctx.accounts.cleanup_stake()
     }
 
     // Stake DAO tokens
@@ -60,50 +69,48 @@ pub mod dao_2 {
 
     // Create a proposal
     pub fn create_proposal(
-        ctx: Context<CreateProposal>, 
-        id: u64, 
-        name: String, 
-        gist: String, 
-        proposal: ProposalType, 
-        threshold: u64, 
-        amount: u64, 
-        data: Vec<u8>
+        ctx: Context<CreateProposal>,
+        id: u64,
+        name: String,
+        gist: String,
+        proposal: ProposalType,
+        threshold: u64,
+        amount: u64,
+        data: Vec<u8>,
     ) -> Result<()> {
         // Pay a proposal fee to DAO treasury
         ctx.accounts.pay_proposal_fee()?;
 
         // Ensure user has actually got tokens staked and create a new proposal
         ctx.accounts.create_proposal(
-            id, 
-            name, 
+            id,
+            name,
             gist,
             proposal,
-            threshold, 
+            threshold,
             amount,
-            *ctx.bumps.get("proposal").ok_or(DaoError::BumpError)?
+            ctx.bumps.proposal,
         )
     }
 
     // Cleanup a proposal
-    pub fn cleanup_proposal(
-        ctx: Context<CreateProposal>, 
-    ) -> Result<()> {
+    pub fn cleanup_proposal(ctx: Context<CreateProposal>) -> Result<()> {
         // Pay a proposal fee to DAO treasury
-        ctx.accounts.cleanup_proposal()
+        unimplemented!()
+        //ctx.accounts.cleanup_proposal()
     }
 
-     // Cleanup a proposal
-     pub fn execute_proposal(
-        ctx: Context<CreateProposal>, 
-    ) -> Result<()> {
+    // Cleanup a proposal
+    pub fn execute_proposal(ctx: Context<CreateProposal>) -> Result<()> {
         // Pay a proposal fee to DAO treasury
-        ctx.accounts.cleanup_proposal()
+        unimplemented!()
+        //ctx.accounts.cleanup_proposal()
     }
 
     // Vote on a proposal
     pub fn vote(ctx: Context<Vote>, amount: u64) -> Result<()> {
         // Increment total number of votes in the proposal
-        ctx.accounts.vote(amount, *ctx.bumps.get("vote").ok_or(DaoError::BumpError)?)
+        ctx.accounts.vote(amount, ctx.bumps.vote)
     }
 
     // Close a voting position after a proposal has passed/expired
